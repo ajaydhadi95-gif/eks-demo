@@ -1,297 +1,1291 @@
-# React + Vite
+# Kubernetes (K8s) – Complete Learning & AWS EKS CI/CD Guide
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Container%20Orchestration-326CE5?logo=kubernetes&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Container-2496ED?logo=docker&logoColor=white)
+![AWS EKS](https://img.shields.io/badge/AWS-EKS-FF9900?logo=amazonaws&logoColor=white)
+![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-D24939?logo=jenkins&logoColor=white)
 
-Currently, two official plugins are available:
+## Table of Contents
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. [Introduction to Kubernetes](#1-introduction-to-kubernetes)
+2. [Why Kubernetes?](#2-why-kubernetes)
+3. [Problems Solved by Kubernetes](#3-problems-solved-by-kubernetes)
+4. [Kubernetes Architecture](#4-kubernetes-architecture)
+5. [Core Kubernetes Components](#5-core-kubernetes-components)
+6. [Kubernetes Installation Using Minikube](#6-kubernetes-installation-using-minikube)
+7. [Deploy an NGINX Application on Minikube](#7-deploy-an-nginx-application-on-minikube)
+8. [Scaling, Logs and Troubleshooting](#8-scaling-logs-and-troubleshooting)
+9. [Cleanup](#9-cleanup)
+10. [Useful Kubernetes Commands](#10-useful-kubernetes-commands)
+11. [Minikube vs Production Kubernetes](#11-minikube-vs-production-kubernetes)
+12. [AWS EKS Production-Style CI/CD Architecture](#12-aws-eks-production-style-cicd-architecture)
+13. [GitHub to Jenkins CI/CD Flow](#13-github-to-jenkins-cicd-flow)
+14. [Build Docker Image](#14-build-docker-image)
+15. [Push Image to Amazon ECR](#15-push-image-to-amazon-ecr)
+16. [Deploy Application to Amazon EKS](#16-deploy-application-to-amazon-eks)
+17. [Kubernetes Service](#17-kubernetes-service)
+18. [Ingress and AWS Load Balancer Controller](#18-ingress-and-aws-load-balancer-controller)
+19. [OIDC and IRSA](#19-oidc-and-irsa)
+20. [Application Load Balancer](#20-application-load-balancer)
+21. [Route 53](#21-route-53)
+22. [End-to-End Request Flow](#22-end-to-end-request-flow)
+23. [Production Notes](#23-production-notes)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-
-
-## 1. Introduction to Kubernetes
+# 1. Introduction to Kubernetes
 
 ## What is Kubernetes?
 
-Kubernetes (K8s) is an open-source container orchestration platform used to deploy, manage, scale, and monitor containerized applications automatically. It helps organizations run applications reliably across multiple servers by managing containers efficiently.
-Why Kubernetes
-As applications grow, managing containers manually becomes difficult. Kubernetes solves these challenges by automating container operations.
-It provides:
-•	Automated deployment of applications 
-•	Automatic scaling based on workload 
-•	Self-healing by restarting failed containers 
-•	Load balancing to distribute traffic 
-•	Rolling updates with zero downtime 
-•	Easy rollback to previous versions 
-•	Service discovery between applications 
-•	High availability and fault tolerance
+**Kubernetes (K8s)** is an open-source container orchestration platform used to deploy, manage, scale, and operate containerized applications.
 
-## Problems Before Kubernetes
+It helps organizations run applications reliably across multiple machines by automating container scheduling, networking, scaling, service discovery, and recovery.
 
-## 1. Manual Deployment
-Deploying applications manually takes time and increases the chance of human errors.
-Problem:
-•	Manual installation 
-•	Manual configuration 
-•	Time-consuming deployments 
-•	Higher risk of mistakes
+## Why Kubernetes?
 
-## 2. Problems Solved by Kubernetes
+As applications grow, manually managing containers becomes difficult. Kubernetes automates common operational tasks such as:
 
-Kubernetes solves the common challenges of running containerized applications by automating deployment, scaling, networking, and recovery.
-Problems & Solutions
-•	Manual Deployment → Automates application deployment using YAML files. 
-•	No Auto Scaling → Automatically scales Pods based on workload. 
-•	Application Failure → Restarts failed Pods automatically (Self-Healing). 
-•	Uneven Traffic → Distributes traffic using Load Balancing. 
-•	Downtime During Updates → Performs Rolling Updates with zero downtime. 
-•	Failed Deployment → Supports Rollback to the previous stable version. 
-•	Changing Pod IPs → Provides stable networking through Services. 
-•	Data Loss → Uses Persistent Volumes (PV) and Persistent Volume Claims (PVC). 
-•	Configuration Management → Stores configuration in ConfigMaps. 
-•	Secret Management → Securely stores passwords, API keys, and tokens using Secrets.
+- Automated application deployment
+- Scaling of workloads
+- Self-healing of failed Pods
+- Service discovery and networking
+- Load balancing
+- Rolling updates
+- Rollbacks
+- High availability
+- Configuration and secret management
 
+---
 
-## 3. Kubernetes Architecture
+# 2. Why Kubernetes?
 
-Kubernetes architecture consists of two main components:
+Before Kubernetes, containerized applications were often managed manually.
 
-1.	Control Plane (Master Node) – Manages the entire Kubernetes cluster. 
+### Common problems
 
-2.	Worker Node – Runs the containerized applications (Pods).
+- Manual installation and configuration
+- Difficult application deployments
+- No automatic recovery
+- Difficult scaling
+- Changing container IP addresses
+- Traffic distribution problems
+- Downtime during application updates
+- Configuration management challenges
+- Secret management challenges
 
-![Kubernetes Architecture](./images/Copilot_20260803_232806.png)
+Kubernetes addresses these problems by allowing the desired state of an application to be defined declaratively, usually through YAML manifests.
 
-Control Plane (Master Node)
-The Control Plane manages the entire Kubernetes cluster.
+---
 
-## 1. API Server
-•	Entry point of Kubernetes. 
-•	Receives all requests from kubectl. 
-•	Communicates with all cluster components. 
+# 3. Problems Solved by Kubernetes
 
-## 2. etcd
-•	Key-value database. 
-•	Stores cluster configuration and state. 
-3. Scheduler
-•	Selects the best Worker Node for new Pods. 
-•	Places Pods based on available CPU and Memory. 
+| Problem | Kubernetes Solution |
+|---|---|
+| Manual deployment | Deployments and YAML manifests |
+| No automatic scaling | Horizontal Pod Autoscaler and replica management |
+| Application failure | Self-healing and controller reconciliation |
+| Uneven traffic | Services and load-balancing mechanisms |
+| Downtime during updates | Rolling updates |
+| Failed deployment | Rollout history and rollback |
+| Changing Pod IPs | Kubernetes Services |
+| Persistent application data | Persistent Volumes and Persistent Volume Claims |
+| Application configuration | ConfigMaps |
+| Sensitive configuration | Secrets |
 
-## 4. Controller Manager
+> **Note:** Kubernetes provides the mechanisms for high availability and rolling updates, but the actual availability and zero-downtime behavior depend on the application design, replica count, readiness probes, infrastructure, and deployment strategy.
 
-•	Maintains the desired state. 
-•	Restarts failed Pods automatically. 
-•	Ensures replicas are always running.
+---
 
-## 5. Cloud Controller Manager
+# 4. Kubernetes Architecture
 
-•	Integrates Kubernetes with cloud providers like AWS. 
-•	Creates cloud resources such as: 
-o	Load Balancer 
-o	Volumes 
-o	Routes 
-o	Nodes 
+Kubernetes can be understood as two major areas:
 
-## Worker Node (Data Plane)
-Each Worker Node runs the application containers.
+```text
+                    Kubernetes Cluster
+                           |
+             +-------------+-------------+
+             |                           |
+       Control Plane                  Worker Nodes
+       (Management)                   (Data Plane)
+             |                           |
+    +--------+--------+            +-----+------+
+    |        |        |            |            |
+ API Server  etcd  Scheduler    kubelet     kube-proxy
+    |                 |              |
+    |           Controller Manager   Pods
+    |
+ Cloud Controller Manager
+```
 
-## 1. kubelet
-•	Agent running on every Worker Node. 
-•	Receives instructions from the API Server. 
-•	Starts and monitors Pods. 
+## Control Plane
 
-## 2. kube-proxy
-•	Handles networking. 
-•	Routes traffic to the correct Pods. 
-•	Provides Service networking and load balancing.
+The Control Plane manages the Kubernetes cluster.
 
-## 3. Container Runtime
-## Runs the containers.
-## Examples:
-•	containerd 
-•	CRI-O 
-•	Docker (older Kubernetes versions) 
+### 1. API Server
 
-## 4. Pods
-•	Smallest deployable unit. 
-•	Runs one or more containers.
+- Main entry point to Kubernetes.
+- Receives requests from `kubectl`, controllers, and other clients.
+- Validates and processes Kubernetes API requests.
+- Communicates with other cluster components.
 
-Kubernetes Installation Using Minikube (Step-by-Step)
-	Minikube is the best option for beginners because it creates a single-node Kubernetes cluster on your local machine.
-	Prerequisites
-	Ubuntu 22.04 / 24.04 
-	2 CPU 
-	4 GB RAM 
-	Internet Connection 
-	Sudo User
-Step 1: Update the System
+### 2. etcd
+
+- Distributed key-value store.
+- Stores Kubernetes cluster state and configuration.
+- The API Server uses etcd as the cluster's persistent state store.
+
+### 3. Scheduler
+
+- Selects a suitable Worker Node for newly created Pods.
+- Considers resource availability and scheduling constraints.
+
+### 4. Controller Manager
+
+- Runs controllers that continuously compare actual state with desired state.
+- Helps maintain the desired number of replicas.
+- Detects and responds to changes in cluster resources.
+
+### 5. Cloud Controller Manager
+
+Used in cloud environments to integrate Kubernetes with cloud-provider APIs.
+
+For AWS-based Kubernetes deployments, cloud integrations can manage resources such as:
+
+- Load balancers
+- Cloud volumes
+- Cloud networking resources
+- Node-related cloud resources
+
+---
+
+# 5. Core Kubernetes Components
+
+## Worker Node
+
+A Worker Node runs application workloads.
+
+### kubelet
+
+- Agent running on each Worker Node.
+- Communicates with the Kubernetes API Server.
+- Ensures containers described by Pod specifications are running.
+
+### kube-proxy
+
+- Provides networking support for Kubernetes Services.
+- Helps route network traffic to appropriate Pods.
+
+### Container Runtime
+
+Runs containers through the Kubernetes Container Runtime Interface (CRI).
+
+Common runtimes include:
+
+- `containerd`
+- `CRI-O`
+
+> Docker Engine was commonly used with older Kubernetes setups through integrations such as Docker Shim. Modern Kubernetes installations generally use CRI-compatible runtimes such as containerd or CRI-O.
+
+### Pod
+
+A **Pod** is the smallest deployable unit in Kubernetes.
+
+A Pod can contain one or more containers that share networking and storage resources.
+
+---
+
+# 6. Kubernetes Installation Using Minikube
+
+Minikube is useful for learning, local development, and testing Kubernetes concepts on a local machine.
+
+## Prerequisites
+
+Recommended starting requirements:
+
+- Ubuntu 22.04 / 24.04
+- At least 2 CPUs
+- At least 4 GB RAM
+- Internet connection
+- Sudo privileges
+- Docker installed
+
+> Resource requirements can vary depending on the workloads and Minikube driver.
+
+---
+
+## Step 1: Update the System
+
+```bash
 sudo apt update
 sudo apt upgrade -y
+```
+
 Verify:
+
+```bash
 sudo apt update
+```
 
+---
 
+## Step 2: Install Docker
 
-Step 2: Install Docker
-
+```bash
 sudo apt install docker.io -y
-Start Docker
+```
+
+Start Docker:
+
+```bash
 sudo systemctl start docker
-Enable Docker
+```
+
+Enable Docker at boot:
+
+```bash
 sudo systemctl enable docker
-Check Status
+```
+
+Check Docker:
+
+```bash
 sudo systemctl status docker
-Check Version
 docker --version
-Example Output
+```
+
+Example:
+
+```text
 Docker version 28.x.x
+```
 
-Step 3: Add User to Docker Group
+---
+
+## Step 3: Add User to Docker Group
+
+This allows the current user to use Docker without `sudo`.
+
+```bash
 sudo usermod -aG docker $USER
-Apply Changes
+```
+
+Apply the group change:
+
+```bash
 newgrp docker
-Test Docker
+```
+
+Test Docker:
+
+```bash
 docker run hello-world
+```
 
-Step 4: Install kubectl
+---
 
-Download kubectl
+## Step 4: Install kubectl
+
+Download the current stable Linux AMD64 client:
+
+```bash
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-Install kubectl
+```
+
+Install:
+
+```bash
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-Verify
+```
+
+Verify:
+
+```bash
 kubectl version --client
+```
 
-Step 5: Install Minikube
-Download Minikube
+---
+
+## Step 5: Install Minikube
+
+Download Minikube:
+
+```bash
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-Install
+```
+
+Install:
+
+```bash
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
-Verify Installation
+```
+
+Verify:
+
+```bash
 minikube version
-Example Output
+```
+
+Example:
+
+```text
 minikube version: v1.38.1
+```
 
+The exact version may change because the installation uses the latest available release.
 
-Step 6: Start Minikube Cluster
-Using Docker Driver
+---
+
+# 7. Deploy an NGINX Application on Minikube
+
+## Step 1: Start Minikube
+
+Using Docker as the driver:
+
+```bash
 minikube start --driver=docker
-If Docker is the default driver, you can also run:
+```
+
+If Docker is already configured as the default driver:
+
+```bash
 minikube start
+```
 
+---
 
-Step 7: Verify Cluster
-Cluster Information
+## Step 2: Verify the Cluster
+
+Check cluster information:
+
+```bash
 kubectl cluster-info
-Check Nodes
+```
+
+Check Nodes:
+
+```bash
 kubectl get nodes
-Example Output
+```
+
+Example:
+
+```text
 NAME       STATUS   ROLES           AGE   VERSION
 minikube   Ready    control-plane   2m    v1.35.x
-Check Pods
+```
+
+Check all Pods:
+
+```bash
 kubectl get pods -A
+```
 
-Step 8: Create a Deployment
+---
 
+## Step 3: Create an NGINX Deployment
+
+```bash
 kubectl create deployment nginx --image=nginx
+```
 
-Verify
+Verify Deployment:
 
+```bash
 kubectl get deployments
+```
 
-Check Pods
+Check Pods:
 
+```bash
 kubectl get pods
+```
 
-Step 9: Expose the Deployment
+Expected state:
 
+```text
+STATUS
+Running
+```
+
+---
+
+## Step 4: Expose the Deployment
+
+Create a NodePort Service:
+
+```bash
 kubectl expose deployment nginx --type=NodePort --port=80
+```
 
-Check Service
+Check the Service:
 
+```bash
 kubectl get svc
+```
 
-Example Output
-NAME         TYPE       CLUSTER-IP      PORT(S)
-nginx        NodePort   10.96.120.25    80:30080/TCP
+Example:
 
-Step 10: Access the Application
-Open the service in your browser:
+```text
+NAME    TYPE       CLUSTER-IP      PORT(S)
+nginx   NodePort   10.96.120.25    80:30080/TCP
+```
 
+> The NodePort value is dynamically assigned unless explicitly specified. Do not assume it will always be `30080`.
+
+---
+
+## Step 5: Access the Application
+
+Open the application automatically:
+
+```bash
 minikube service nginx
+```
 
-Or get the URL:
+Or retrieve the URL:
 
+```bash
 minikube service nginx --url
+```
 
+Open the returned URL in a browser.
 
-Step 11: Scale the Deployment
- 	Increase replicas to 3:
+---
 
+# 8. Scaling, Logs and Troubleshooting
+
+## Scale the Deployment
+
+Increase replicas to 3:
+
+```bash
 kubectl scale deployment nginx --replicas=3
+```
 
-Verify
+Verify:
+
+```bash
 kubectl get pods
+```
 
-Step 12: View Logs
+You should see three NGINX Pods managed by the Deployment.
 
-      kubectl logs <pod-name>
-Example
-kubectl logs nginx-6f7d9f9f7d-abcde
+---
 
+## View Pod Logs
 
-Step 13: Describe Resources
-Describe Pod
-kubectl describe pod <pod-name>
-Describe Deployment
-kubectl describe deployment nginx
-Describe Service
-kubectl describe svc nginx
-Step 14: Delete Resources
-Delete Deployment
-kubectl delete deployment nginx
-Delete Service
-kubectl delete svc nginx
+First get the Pod name:
 
-Step 15: Stop Minikube
-minikube stop
-
-Step 16: Delete Minikube Cluster
-
-	minikube delete
-
-Useful Commands
-
-kubectl cluster-info
-
-kubectl get nodes
-
+```bash
 kubectl get pods
+```
 
-kubectl get deployments
+Then:
 
-kubectl get svc
-
-kubectl get namespaces
-
-kubectl describe pod <pod-name>
-
+```bash
 kubectl logs <pod-name>
+```
 
+Example:
+
+```bash
+kubectl logs nginx-6f7d9f9f7d-abcde
+```
+
+---
+
+## Describe Resources
+
+Describe a Pod:
+
+```bash
+kubectl describe pod <pod-name>
+```
+
+Describe Deployment:
+
+```bash
+kubectl describe deployment nginx
+```
+
+Describe Service:
+
+```bash
+kubectl describe svc nginx
+```
+
+These commands are especially useful when troubleshooting:
+
+- Pending Pods
+- CrashLoopBackOff
+- ImagePullBackOff
+- Failed scheduling
+- Service connectivity
+- Configuration problems
+
+---
+
+# 9. Cleanup
+
+Delete the Deployment:
+
+```bash
+kubectl delete deployment nginx
+```
+
+Delete the Service:
+
+```bash
+kubectl delete svc nginx
+```
+
+Stop Minikube:
+
+```bash
+minikube stop
+```
+
+Delete the Minikube cluster completely:
+
+```bash
+minikube delete
+```
+
+---
+
+# 10. Useful Kubernetes Commands
+
+## Cluster
+
+```bash
+kubectl cluster-info
+kubectl get nodes
+kubectl get namespaces
+```
+
+## Workloads
+
+```bash
+kubectl get pods
+kubectl get deployments
+kubectl get replicasets
+```
+
+## Services
+
+```bash
+kubectl get svc
+kubectl describe svc <service-name>
+```
+
+## Troubleshooting
+
+```bash
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+kubectl get events
 kubectl delete pod <pod-name>
+```
 
+## Minikube
+
+```bash
 minikube status
-
 minikube dashboard
+```
 
+---
 
-Note:
-This project uses Minikube, which is suitable for learning, development, and testing on a local machine. It helps beginners understand Kubernetes concepts such as Pods, Deployments, Services, and Scaling before moving to a production environment. In production, organizations typically use managed Kubernetes services such as Amazon EKS, Azure AKS, or Google GKE.
+# 11. Minikube vs Production Kubernetes
 
+Minikube is primarily intended for local learning and development.
+
+For production workloads, organizations commonly use managed Kubernetes services such as:
+
+- Amazon EKS
+- Azure AKS
+- Google GKE
+
+This project therefore uses Minikube to learn the Kubernetes fundamentals and then demonstrates a production-style deployment flow using Amazon EKS.
+
+---
+
+# 12. AWS EKS Production-Style CI/CD Architecture
+
+The production-style flow covered in this project is:
+
+```text
+Developer
+    |
+    | git push
+    v
+GitHub Repository
+    |
+    | Webhook
+    v
+Jenkins
+    |
+    | Build & Test
+    v
+Docker Image
+    |
+    | Push
+    v
+Amazon ECR
+    |
+    | Pull Image
+    v
+Amazon EKS
+    |
+    +--> Deployment
+    |       |
+    |       v
+    |     Pods
+    |
+    +--> Service
+    |
+    +--> Ingress
+             |
+             v
+AWS Load Balancer Controller
+             |
+             v
+Application Load Balancer
+             |
+             v
+Route 53
+             |
+             v
+Users
+```
+
+A multi-tier application can extend this architecture:
+
+```text
+Users
+  |
+  v
+Route 53
+  |
+  v
+Application Load Balancer
+  |
+  v
+Ingress
+  |
+  +----------------------+
+  |                      |
+  v                      v
+Frontend Service     Backend Service
+  |                      |
+  v                      v
+Frontend Pods         Backend Pods
+                         |
+                         v
+                    Amazon RDS
+```
+
+---
+
+# 13. GitHub to Jenkins CI/CD Flow
+
+## Step 1: Developer Pushes Code
+
+```bash
+git add .
+git commit -m "Initial Commit"
+git push origin main
+```
+
+A configured GitHub webhook can trigger Jenkins automatically after the push.
+
+---
+
+## Step 2: Jenkins Pipeline Starts
+
+A simplified Jenkinsfile structure:
+
+```groovy
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/username/repository.git'
+            }
+        }
+
+        // Build, test, image push and deployment stages
+        // can be added here.
+    }
+}
+```
+
+> Replace the repository URL with your actual GitHub repository URL. In production, credentials and repository configuration should be managed securely through Jenkins credentials and pipeline configuration.
+
+---
+
+# 14. Build Docker Image
+
+Jenkins builds a Docker image using the project's Dockerfile.
+
+Example:
+
+```bash
+docker build -t frontend:v1 .
+```
+
+Verify:
+
+```bash
+docker images
+```
+
+For CI/CD, using an immutable tag such as the Jenkins `BUILD_NUMBER` or Git commit SHA is preferable to relying only on `v1` or `latest`.
+
+---
+
+# 15. Push Image to Amazon ECR
+
+## Step 1: Authenticate Docker with ECR
+
+Replace `<ACCOUNT_ID>` with the AWS account ID.
+
+```bash
+aws ecr get-login-password --region ap-south-1 | \
+docker login --username AWS --password-stdin \
+<ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com
+```
+
+## Step 2: Tag the Image
+
+```bash
+docker tag frontend:v1 \
+<ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/frontend:v1
+```
+
+## Step 3: Push the Image
+
+```bash
+docker push \
+<ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/frontend:v1
+```
+
+Verify the image in the Amazon ECR repository.
+
+> The ECR repository must exist before pushing unless your CI/CD pipeline creates it automatically.
+
+---
+
+# 16. Deploy Application to Amazon EKS
+
+## Connect kubectl to EKS
+
+Example cluster:
+
+```text
+Cluster: demo-cluster
+Region:  ap-south-1
+```
+
+Update kubeconfig:
+
+```bash
+aws eks update-kubeconfig \
+  --region ap-south-1 \
+  --name demo-cluster
+```
+
+Verify:
+
+```bash
+kubectl get nodes
+```
+
+---
+
+## Deploy the Application
+
+If the repository contains Kubernetes manifests:
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+Verify:
+
+```bash
+kubectl get deployments
+kubectl get pods
+```
+
+For a production project, the Deployment should normally specify:
+
+- Container image
+- Replica count
+- Container port
+- Resource requests/limits
+- Readiness probe
+- Liveness probe
+- Image pull policy
+- Environment/configuration references
+
+---
+
+# 17. Kubernetes Service
+
+A Service provides a stable network endpoint for a set of Pods.
+
+Apply the Service:
+
+```bash
+kubectl apply -f service.yaml
+```
+
+Verify:
+
+```bash
+kubectl get svc
+```
+
+Typical Service types include:
+
+- `ClusterIP` – internal cluster communication
+- `NodePort` – exposes a port on each node
+- `LoadBalancer` – integrates with a cloud load balancer
+- `ExternalName` – maps a Service to an external DNS name
+
+For the EKS architecture in this project, the Service is used as the stable backend for the Ingress/controller routing layer.
+
+---
+
+# 18. Ingress and AWS Load Balancer Controller
+
+## What is Ingress?
+
+Ingress defines HTTP/HTTPS routing rules for applications inside a Kubernetes cluster.
+
+For example:
+
+```text
+example.com/
+       |
+       v
+Frontend Service
+
+example.com/api
+       |
+       v
+Backend Service
+```
+
+Create the Ingress:
+
+```bash
+kubectl apply -f ingress.yaml
+```
+
+Verify:
+
+```bash
+kubectl get ingress
+```
+
+> **Important:** An Ingress resource is a set of routing rules. It does not itself process network traffic. An Ingress Controller watches the Ingress resource and implements those rules. In this AWS architecture, the AWS Load Balancer Controller provisions and configures an AWS Application Load Balancer.
+
+---
+
+# 19. OIDC and IRSA
+
+## What is OIDC?
+
+Amazon EKS can use an OIDC identity provider to establish trust between Kubernetes workloads and AWS IAM.
+
+This enables **IAM Roles for Service Accounts (IRSA)**.
+
+IRSA allows a Kubernetes ServiceAccount to assume an AWS IAM role so that Pods can access AWS resources without storing long-lived AWS access keys inside the container.
+
+---
+
+## Associate the IAM OIDC Provider
+
+```bash
+eksctl utils associate-iam-oidc-provider \
+  --region ap-south-1 \
+  --cluster demo-cluster \
+  --approve
+```
+
+Verify the OIDC association using AWS/EKS tooling if required.
+
+---
+
+# 20. AWS Load Balancer Controller
+
+The AWS Load Balancer Controller watches Kubernetes resources such as Ingress and Service resources and creates/configures AWS load-balancing resources.
+
+## Step 1: Create IAM Policy
+
+Create the AWS Load Balancer Controller IAM policy according to the current AWS Load Balancer Controller documentation.
+
+Example policy name:
+
+```text
+AWSLoadBalancerControllerIAMPolicy
+```
+
+The policy ARN used below assumes the policy already exists.
+
+---
+
+## Step 2: Create IAM Service Account
+
+```bash
+eksctl create iamserviceaccount \
+  --cluster demo-cluster \
+  --namespace kube-system \
+  --name aws-load-balancer-controller \
+  --attach-policy-arn arn:aws:iam::<ACCOUNT_ID>:policy/AWSLoadBalancerControllerIAMPolicy \
+  --approve
+```
+
+Replace:
+
+```text
+<ACCOUNT_ID>
+```
+
+with your AWS account ID.
+
+---
+
+## Step 3: Install Helm Repository
+
+```bash
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+```
+
+---
+
+## Step 4: Install AWS Load Balancer Controller
+
+```bash
+helm install aws-load-balancer-controller \
+  eks/aws-load-balancer-controller \
+  -n kube-system \
+  --set clusterName=demo-cluster \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller
+```
+
+---
+
+## Step 5: Verify Controller
+
+```bash
+kubectl get pods -n kube-system
+```
+
+Check the Deployment:
+
+```bash
+kubectl get deployment \
+  aws-load-balancer-controller \
+  -n kube-system
+```
+
+The Controller Pods should eventually reach `Running` and become Ready.
+
+---
+
+# 21. Application Load Balancer
+
+Once:
+
+1. The AWS Load Balancer Controller is installed,
+2. IAM/OIDC configuration is correct, and
+3. A valid AWS Ingress resource is applied,
+
+the controller can provision/configure an Application Load Balancer according to the Ingress configuration.
+
+Check the Ingress:
+
+```bash
+kubectl get ingress
+```
+
+For more details:
+
+```bash
+kubectl describe ingress <ingress-name>
+```
+
+The ALB DNS name will normally appear in the Ingress status.
+
+---
+
+# 22. Route 53
+
+Route 53 can be used to provide a friendly domain name for the application.
+
+Example:
+
+```text
+www.example.com
+       |
+       v
+Application Load Balancer
+```
+
+Create an appropriate Route 53 record, commonly an **Alias A/AAAA record**, pointing to the ALB.
+
+The exact record configuration depends on whether the application uses:
+
+- Root domain
+- Subdomain
+- IPv4/IPv6
+- HTTPS
+- ACM certificate
+
+---
+
+# 23. End-to-End Request Flow
+
+The complete request flow for the production-style architecture is:
+
+```text
+User
+ |
+ | HTTPS request
+ v
+Route 53
+ |
+ | DNS resolution
+ v
+Application Load Balancer
+ |
+ | Listener / target routing
+ v
+AWS Load Balancer Controller-managed routing
+ |
+ v
+Kubernetes Service
+ |
+ v
+Frontend Pods
+ |
+ | Internal Kubernetes networking
+ v
+Backend Service
+ |
+ v
+Backend Pods
+ |
+ | Database connection
+ v
+Amazon RDS
+ |
+ v
+Response
+```
+
+### Explanation
+
+1. The user accesses the application using a domain name.
+2. Route 53 resolves the domain to the Application Load Balancer.
+3. The ALB receives the HTTP/HTTPS request.
+4. The AWS Load Balancer Controller implements the Kubernetes Ingress configuration on AWS.
+5. The request is routed to the appropriate Kubernetes Service.
+6. The Service selects the appropriate application Pods.
+7. Frontend Pods can communicate with Backend Pods through Kubernetes networking.
+8. Backend Pods can communicate with Amazon RDS when the application requires database access.
+9. The response returns through the appropriate networking path to the user.
+
+### Security
+
+OIDC + IRSA allows the AWS Load Balancer Controller to obtain AWS permissions through an IAM role associated with its Kubernetes ServiceAccount rather than embedding long-lived AWS access keys in the Pod.
+
+---
+
+# 24. Production Notes
+
+The Minikube portion of this README is designed for learning and local testing.
+
+For a production EKS implementation, consider adding:
+
+## Kubernetes
+
+- Multiple replicas
+- Readiness probes
+- Liveness probes
+- Startup probes where required
+- Resource requests and limits
+- Horizontal Pod Autoscaler
+- Pod Disruption Budgets
+- Namespace separation
+- Network Policies
+- ConfigMaps
+- Secrets
+- Persistent storage where required
+
+## AWS
+
+- Multi-AZ architecture
+- Private worker-node subnets
+- Public subnets for internet-facing load balancers where appropriate
+- IAM least privilege
+- Security Groups
+- VPC and subnet design
+- NAT Gateway where required
+- Amazon RDS Multi-AZ where appropriate
+- CloudWatch monitoring and logging
+- AWS Certificate Manager for HTTPS
+- Route 53 DNS
+- ECR image scanning and lifecycle policies
+
+## CI/CD
+
+Recommended pipeline stages:
+
+```text
+Checkout
+   |
+   v
+Build
+   |
+   v
+Unit / Integration Tests
+   |
+   v
+Docker Build
+   |
+   v
+Security / Image Scan
+   |
+   v
+Push to ECR
+   |
+   v
+Deploy to EKS
+   |
+   v
+Rollout Verification
+```
+
+For Jenkins, avoid storing AWS access keys directly in the Jenkinsfile. Use Jenkins credentials or, preferably, an appropriate AWS identity mechanism with least-privilege permissions.
+
+---
+
+# Project Summary
+
+This project covers Kubernetes from fundamentals to a production-style AWS EKS workflow.
+
+### Local Kubernetes
+
+- Kubernetes fundamentals
+- Control Plane and Worker Nodes
+- Pods
+- Deployments
+- Services
+- Scaling
+- Logs
+- Troubleshooting
+- Minikube installation
+- NGINX deployment
+
+### AWS EKS
+
+- Amazon EKS
+- Amazon ECR
+- IAM
+- OIDC
+- IRSA
+- AWS Load Balancer Controller
+- Ingress
+- Application Load Balancer
+- Route 53
+
+### CI/CD
+
+- GitHub
+- Jenkins
+- Docker
+- Amazon ECR
+- Kubernetes deployment
+- EKS-based application delivery
+
+---
+
+# Final Architecture
+
+```text
+                         +----------------+
+                         |     Users      |
+                         +-------+--------+
+                                 |
+                                 v
+                         +---------------+
+                         |   Route 53    |
+                         +-------+-------+
+                                 |
+                                 v
+                    +-------------------------+
+                    | Application Load        |
+                    | Balancer (ALB)          |
+                    +-----------+-------------+
+                                |
+                                v
+                    +-------------------------+
+                    | Kubernetes Ingress      |
+                    | Rules                   |
+                    +-----------+-------------+
+                                |
+                                v
+                    +-------------------------+
+                    | Kubernetes Service      |
+                    +-----------+-------------+
+                                |
+                       +--------+--------+
+                       |                 |
+                       v                 v
+                 Frontend Pods      Backend Pods
+                                         |
+                                         v
+                                  +-------------+
+                                  | Amazon RDS  |
+                                  +-------------+
+
+CI/CD:
+
+Developer
+   |
+   v
+GitHub
+   |
+   | Webhook
+   v
+Jenkins
+   |
+   v
+Docker Build
+   |
+   v
+Amazon ECR
+   |
+   v
+Amazon EKS
+```
+
+---
+
+## Conclusion
+
+Kubernetes provides a declarative platform for deploying and operating containerized applications. Minikube provides a simple environment for learning the fundamentals, while Amazon EKS provides a managed Kubernetes platform suitable for production workloads.
+
+The complete workflow demonstrated here connects:
+
+**GitHub → Jenkins → Docker → Amazon ECR → Amazon EKS → Ingress → AWS Load Balancer Controller → ALB → Route 53**
+
+This provides a strong foundation for learning Kubernetes and building an AWS-focused DevOps CI/CD project.
