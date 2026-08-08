@@ -1280,12 +1280,3 @@ Amazon EKS
 
 ---
 
-## Conclusion
-
-Kubernetes provides a declarative platform for deploying and operating containerized applications. Minikube provides a simple environment for learning the fundamentals, while Amazon EKS provides a managed Kubernetes platform suitable for production workloads.
-
-The complete workflow demonstrated here connects:
-
-**GitHub → Jenkins → Docker → Amazon ECR → Amazon EKS → Ingress → AWS Load Balancer Controller → ALB → Route 53**
-
-This provides a strong foundation for learning Kubernetes and building an AWS-focused DevOps CI/CD project.
